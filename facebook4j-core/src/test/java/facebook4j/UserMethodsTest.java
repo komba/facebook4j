@@ -36,7 +36,7 @@ public class UserMethodsTest extends MockFacebookTestBase {
     public static class getMe extends MockFacebookTestBase {
         @Test
         public void me() throws Exception {
-            facebook.setMockJSON("mock_json/user/me.json");
+            facebook.setMockJSON("mock_json/user/me2.json");
             User me = facebook.getMe();
 
             assertThat(me.getBio(), is("biography"));

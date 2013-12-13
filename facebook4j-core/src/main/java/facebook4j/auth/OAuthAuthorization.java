@@ -21,13 +21,19 @@ import facebook4j.conf.Configuration;
 import facebook4j.internal.http.HttpClientWrapper;
 import facebook4j.internal.http.HttpResponse;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * @author Ryuji Yamashita - roundrop at gmail.com
  * 
  * @see <a href="http://oauth.net/core/1.0a/">OAuth Core 1.0a</a>
  */
-public class OAuthAuthorization implements Authorization, java.io.Serializable, OAuthSupport {
-    private static final long serialVersionUID = 712818287194022801L;
+public class OAuthAuthorization implements Authorization, OAuthSupport, Security, java.io.Serializable {
+    private static final long serialVersionUID = 2548925849295080874L;
 
     private final Configuration conf;
     private transient static HttpClientWrapper http;
@@ -37,6 +43,7 @@ public class OAuthAuthorization implements Authorization, java.io.Serializable, 
     private AccessToken oauthToken;
     private String permissions;
     private String callbackURL;
+    private boolean appSecretProofEnabled;
 
     // constructors
 
@@ -53,6 +60,7 @@ public class OAuthAuthorization implements Authorization, java.io.Serializable, 
         if (conf.getOAuthAccessToken() != null) {
             setOAuthAccessToken(new AccessToken(conf.getOAuthAccessToken(), null));
         }
+        setAppSecretProofEnabled(conf.isAppSecretProofEnabled());
     }
 
     // implementations for Authorization
@@ -159,6 +167,49 @@ public class OAuthAuthorization implements Authorization, java.io.Serializable, 
     public void setOAuthPermissions(String permissions) {
         this.permissions = permissions;
     }
+
+    public void setAppSecretProofEnabled(boolean enabled) {
+        this.appSecretProofEnabled = enabled;
+    }
+
+    public boolean isAppSecretProofEnabled() {
+        return appSecretProofEnabled;
+    }
+
+    // implementations for Security
+    private String appSecretProofCache = null;
+    public String generateAppSecretProof() {
+        if (appSecretProofCache != null) {
+            return appSecretProofCache;
+        }
+
+        if (appSecret == null || !isEnabled()) {
+            throw new IllegalStateException("App Secret and Access Token are required.");
+        }
+
+        Mac mac = null;
+        try {
+            mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(appSecret.getBytes("UTF-8"), "HmacSHA256");
+            mac.init(secretKeySpec);
+        } catch (NoSuchAlgorithmException ignore) {
+        } catch (UnsupportedEncodingException ignore) {
+        } catch (InvalidKeyException e) {
+            throw new IllegalStateException();
+        }
+
+        byte[] encodedBytes = new byte[0];
+        try {
+            encodedBytes = mac.doFinal(oauthToken.getToken().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException ignore) {}
+        StringBuilder result = new StringBuilder();
+        for (byte encodedByte : encodedBytes) {
+            result.append(Integer.toString((encodedByte & 0xff) + 0x100, 16).substring(1));
+        }
+        return appSecretProofCache = result.toString();
+    }
+
+
 
     @Override
     public int hashCode() {
