@@ -26,6 +26,8 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Ryuji Yamashita - roundrop at gmail.com
@@ -177,14 +179,15 @@ public class OAuthAuthorization implements Authorization, OAuthSupport, Security
     }
 
     // implementations for Security
-    private String appSecretProofCache = null;
+    private transient final Map<String, String> appSecretProofCache = new ConcurrentHashMap<String, String>();
     public String generateAppSecretProof() {
-        if (appSecretProofCache != null) {
-            return appSecretProofCache;
-        }
-
         if (appSecret == null || !isEnabled()) {
             throw new IllegalStateException("App Secret and Access Token are required.");
+        }
+
+        String accessToken = oauthToken.getToken();
+        if (appSecretProofCache.containsKey(accessToken)) {
+            return appSecretProofCache.get(accessToken);
         }
 
         Mac mac = null;
@@ -200,13 +203,15 @@ public class OAuthAuthorization implements Authorization, OAuthSupport, Security
 
         byte[] encodedBytes = new byte[0];
         try {
-            encodedBytes = mac.doFinal(oauthToken.getToken().getBytes("UTF-8"));
+            encodedBytes = mac.doFinal(accessToken.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException ignore) {}
         StringBuilder result = new StringBuilder();
         for (byte encodedByte : encodedBytes) {
             result.append(Integer.toString((encodedByte & 0xff) + 0x100, 16).substring(1));
         }
-        return appSecretProofCache = result.toString();
+        String appSecretProof = result.toString();
+        appSecretProofCache.put(accessToken, appSecretProof);
+        return appSecretProof;
     }
 
 
