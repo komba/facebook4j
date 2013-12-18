@@ -36,6 +36,8 @@ import java.security.NoSuchAlgorithmException;
 public class OAuthAuthorization implements Authorization, OAuthSupport, Security, java.io.Serializable {
     private static final long serialVersionUID = 2548925849295080874L;
 
+    public static final String HMAC_SHA_256 = "HmacSHA256";
+
     private final Configuration conf;
     private transient static HttpClientWrapper http;
 
@@ -181,6 +183,13 @@ public class OAuthAuthorization implements Authorization, OAuthSupport, Security
     }
 
     // implementations for Security
+
+    /**
+     * Computes a appsecret_proof value using the HMAC method.
+     * 
+     * @return appsecret_proof
+     * @see <a href="https://developers.facebook.com/docs/graph-api/securing-requests/#appsecret_proof">Verifying Graph API Calls with appsecret_proof</a>
+     */
     public String generateAppSecretProof() {
         if (appSecret == null || !isEnabled()) {
             throw new IllegalStateException("App Secret and Access Token are required.");
@@ -191,24 +200,21 @@ public class OAuthAuthorization implements Authorization, OAuthSupport, Security
             return appSecretProofCache.get(accessToken);
         }
 
-        Mac mac = null;
+        byte[] byteHMAC = null;
         try {
-            mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(appSecret.getBytes("UTF-8"), "HmacSHA256");
+            Mac mac = Mac.getInstance(HMAC_SHA_256);
+            SecretKeySpec secretKeySpec = new SecretKeySpec(appSecret.getBytes("UTF-8"), HMAC_SHA_256);
             mac.init(secretKeySpec);
+            byteHMAC = mac.doFinal(accessToken.getBytes("UTF-8"));
         } catch (NoSuchAlgorithmException ignore) {
         } catch (UnsupportedEncodingException ignore) {
         } catch (InvalidKeyException e) {
             throw new IllegalStateException();
         }
 
-        byte[] encodedBytes = new byte[0];
-        try {
-            encodedBytes = mac.doFinal(accessToken.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException ignore) {}
         StringBuilder result = new StringBuilder();
-        for (byte encodedByte : encodedBytes) {
-            result.append(Integer.toString((encodedByte & 0xff) + 0x100, 16).substring(1));
+        for (byte b : byteHMAC) {
+            result.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
         }
         String appSecretProof = result.toString();
         appSecretProofCache.put(accessToken, appSecretProof);
