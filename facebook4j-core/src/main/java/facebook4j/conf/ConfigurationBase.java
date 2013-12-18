@@ -62,6 +62,7 @@ public class ConfigurationBase implements Configuration, Serializable {
     private String oAuthCallbackURL;
 
     private boolean appSecretProofEnabled;
+    private int appSecretProofCacheSize;
 
     private String oAuthAuthorizationURL;
     private String oAuthAccessTokenURL;
@@ -133,6 +134,7 @@ public class ConfigurationBase implements Configuration, Serializable {
         setOAuthAccessToken(null);
         setOAuthCallbackURL(null);
         setAppSecretProofEnabled(false);
+        setAppSecretProofCacheSize(10);
         setClientVersion(Version.getVersion());
         setClientURL("http://facebook4j.org/en/facebook4j-" + Version.getVersion() + ".xml");
         setUserAgent("facebook4j http://facebook4j.org/ /" + Version.getVersion());
@@ -464,6 +466,14 @@ public class ConfigurationBase implements Configuration, Serializable {
         this.appSecretProofEnabled = enabled;
     }
 
+    public int getAppSecretProofCacheSize() {
+        return this.appSecretProofCacheSize;
+    }
+
+    public void setAppSecretProofCacheSize(int appSecretProofCacheSize) {
+        this.appSecretProofCacheSize = appSecretProofCacheSize;
+    }
+
     static String fixURL(boolean useSSL, String url) {
         if (null == url) {
             return null;
@@ -504,6 +514,7 @@ public class ConfigurationBase implements Configuration, Serializable {
         result = 31 * result + (oAuthAccessToken != null ? oAuthAccessToken.hashCode() : 0);
         result = 31 * result + (oAuthCallbackURL != null ? oAuthCallbackURL.hashCode() : 0);
         result = 31 * result + (appSecretProofEnabled ? 1 : 0);
+        result = 31 * result + appSecretProofCacheSize;
         result = 31 * result + (oAuthAuthorizationURL != null ? oAuthAuthorizationURL.hashCode() : 0);
         result = 31 * result + (oAuthAccessTokenURL != null ? oAuthAccessTokenURL.hashCode() : 0);
         result = 31 * result + (restBaseURL != null ? restBaseURL.hashCode() : 0);
@@ -563,6 +574,7 @@ public class ConfigurationBase implements Configuration, Serializable {
             return false;
         if (appSecretProofEnabled != that.appSecretProofEnabled)
             return false;
+        if (appSecretProofCacheSize != that.appSecretProofCacheSize) return false;
         if (oAuthPermissions != null ? !oAuthPermissions.equals(that.oAuthPermissions) : that.oAuthPermissions != null)
             return false;
         if (requestHeaders != null ? !requestHeaders.equals(that.requestHeaders) : that.requestHeaders != null)
@@ -599,6 +611,7 @@ public class ConfigurationBase implements Configuration, Serializable {
                 ", oAuthAccessToken='" + oAuthAccessToken + '\'' +
                 ", oAuthCallbackURL='" + oAuthCallbackURL + '\'' +
                 ", appSecretProofEnabled=" + appSecretProofEnabled +
+                ", appSecretProofCacheSize=" + appSecretProofCacheSize +
                 ", oAuthAuthorizationURL='" + oAuthAuthorizationURL + '\'' +
                 ", oAuthAccessTokenURL='" + oAuthAccessTokenURL + '\'' +
                 ", restBaseURL='" + restBaseURL + '\'' +

@@ -66,6 +66,7 @@ public final class PropertyConfiguration extends ConfigurationBase implements Se
     public static final String OAUTH_CALLBACK_URL = "oauth.callbackURL";
 
     public static final String SECURITY_APP_SECRET_PROOF_ENABLED = "security.appSecretProofEnabled";
+    public static final String SECURITY_APP_SECRET_PROOF_CACHE_SIZE = "security.appSecretProofCacheSize";
 
     public static final String OAUTH_AUTHORIZATION_URL = "oauth.authorizationURL";
     public static final String OAUTH_ACCESS_TOKEN_URL = "oauth.accessTokenURL";
@@ -275,6 +276,9 @@ public final class PropertyConfiguration extends ConfigurationBase implements Se
         }
         if (notNull(props, prefix, SECURITY_APP_SECRET_PROOF_ENABLED)) {
             setAppSecretProofEnabled(getBoolean(props, prefix, SECURITY_APP_SECRET_PROOF_ENABLED));
+        }
+        if (notNull(props, prefix, SECURITY_APP_SECRET_PROOF_CACHE_SIZE)) {
+            setAppSecretProofCacheSize(getIntProperty(props, prefix, SECURITY_APP_SECRET_PROOF_CACHE_SIZE));
         }
         if (notNull(props, prefix, CLIENT_VERSION)) {
             setClientVersion(getString(props, prefix, CLIENT_VERSION));

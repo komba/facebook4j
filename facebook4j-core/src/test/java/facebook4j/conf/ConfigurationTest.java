@@ -172,6 +172,12 @@ public class ConfigurationTest {
         conf = new PropertyConfiguration();
         assertThat(conf.isAppSecretProofEnabled(), is(false));
 
+        conf = new PropertyConfiguration();
+        assertThat(conf.getAppSecretProofCacheSize(), is(10));
+        writeFile("./facebook4j.properties", "security.appSecretProofCacheSize=50");
+        conf = new PropertyConfiguration();
+        assertThat(conf.getAppSecretProofCacheSize(), is(50));
+
         deleteFile("./facebook4j.properties");
     }
     

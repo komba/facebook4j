@@ -20,14 +20,13 @@ import facebook4j.FacebookException;
 import facebook4j.conf.Configuration;
 import facebook4j.internal.http.HttpClientWrapper;
 import facebook4j.internal.http.HttpResponse;
+import facebook4j.internal.util.z_F4JLRUCache;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Ryuji Yamashita - roundrop at gmail.com
@@ -46,6 +45,7 @@ public class OAuthAuthorization implements Authorization, OAuthSupport, Security
     private String permissions;
     private String callbackURL;
     private boolean appSecretProofEnabled;
+    private transient z_F4JLRUCache<String, String> appSecretProofCache;
 
     // constructors
 
@@ -63,6 +63,8 @@ public class OAuthAuthorization implements Authorization, OAuthSupport, Security
             setOAuthAccessToken(new AccessToken(conf.getOAuthAccessToken(), null));
         }
         setAppSecretProofEnabled(conf.isAppSecretProofEnabled());
+        int appSecretProofCacheSize = 10;
+        appSecretProofCache = new z_F4JLRUCache<String, String>(appSecretProofCacheSize);
     }
 
     // implementations for Authorization
@@ -179,7 +181,6 @@ public class OAuthAuthorization implements Authorization, OAuthSupport, Security
     }
 
     // implementations for Security
-    private transient final Map<String, String> appSecretProofCache = new ConcurrentHashMap<String, String>();
     public String generateAppSecretProof() {
         if (appSecret == null || !isEnabled()) {
             throw new IllegalStateException("App Secret and Access Token are required.");
